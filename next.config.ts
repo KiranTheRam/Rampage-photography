@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
+const enableHttpsUpgrade = process.env.CSP_UPGRADE_INSECURE_REQUESTS === "true";
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""};
@@ -12,7 +13,7 @@ const cspHeader = `
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
-  ${isDev ? "" : "upgrade-insecure-requests;"}
+  ${!isDev && enableHttpsUpgrade ? "upgrade-insecure-requests;" : ""}
 `
   .replace(/\s{2,}/g, " ")
   .trim();

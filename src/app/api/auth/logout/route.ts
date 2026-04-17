@@ -1,4 +1,4 @@
-import { ADMIN_COOKIE } from "@/lib/auth";
+import { ADMIN_COOKIE, secureAuthCookie } from "@/lib/auth";
 import { enforceSameOrigin, jsonNoStore } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     value: "",
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: secureAuthCookie(),
     path: "/",
     maxAge: 0,
   });

@@ -48,6 +48,8 @@ export ADMIN_SESSION_SECRET='change-this-to-a-random-string-at-least-32-characte
 docker compose up --build
 ```
 
+For a registry-backed deployment example, see [`compose.yaml`](./compose.yaml).
+
 ### Persistent uploads
 
 The app treats `public/photos` as the source of truth for what exists, and stores editable metadata in `data/photos.json`. Those runtime files are intentionally not committed to git and are not baked into the Docker image.
@@ -63,5 +65,9 @@ For a real deployment, use one of these approaches:
 
 - Set `ADMIN_PASSWORD` in the runtime environment.
 - Set `ADMIN_SESSION_SECRET` in the runtime environment to a long random value.
+- Set `AUTH_COOKIE_SECURE=true` when the site is served over HTTPS. Only set it to `false` for plain-HTTP deployments.
+- Build the production image with `CSP_UPGRADE_INSECURE_REQUESTS=true` when the site is served over HTTPS so browsers upgrade mixed-content requests.
+- If you run behind a reverse proxy, preserve `Host` and `X-Forwarded-Proto` so same-origin checks and secure cookies behave correctly.
 - The container listens on port `3000`.
 - `HOSTNAME=0.0.0.0` is already configured in the image so it can accept external traffic.
+- Mount persistent storage into `/app/public/photos` and `/app/data`, and keep `/app/.next/cache` writable. The sample Compose file mounts a tmpfs cache for Next image optimization.

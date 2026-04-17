@@ -2,6 +2,7 @@ import {
   ADMIN_COOKIE,
   authConfigError,
   issueSessionToken,
+  secureAuthCookie,
   verifyPassword,
 } from "@/lib/auth";
 import {
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
     value: token,
     httpOnly: true,
     sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
+    secure: secureAuthCookie(),
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   });

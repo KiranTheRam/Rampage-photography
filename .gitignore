@@ -38,6 +38,7 @@ yarn-error.log*
 .claude/
 AGENTS.md
 CLAUDE.md
+docker-compose.local.yaml
 public/photos/
 data/photos.json
 

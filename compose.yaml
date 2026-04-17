@@ -1,13 +1,13 @@
 services:
   web:
-    build:
-      context: .
+    image: registry.example.com/rampage-photography:latest
     restart: unless-stopped
+    env_file:
+      - ./.env.production
     ports:
-      - "4375:3000"
-    environment:
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in your shell or .env file}
-      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?set ADMIN_SESSION_SECRET in your shell or .env file}
+      - "3000:3000"
     volumes:
-      - ./public/photos:/app/public/photos
+      - ./photos:/app/public/photos
       - ./data:/app/data
+    tmpfs:
+      - /app/.next/cache:size=256m,mode=1777

@@ -19,6 +19,10 @@ export function authConfigError(): string | null {
   return null;
 }
 
+export function secureAuthCookie(): boolean {
+  return process.env.AUTH_COOKIE_SECURE === "true";
+}
+
 export function verifyPassword(candidate: string): boolean {
   const pw = process.env.ADMIN_PASSWORD;
   if (!pw) return false;
