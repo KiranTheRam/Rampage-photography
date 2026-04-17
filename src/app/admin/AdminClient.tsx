@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import type { Photo } from "@/lib/photos";
+import { photoSrc } from "@/lib/http";
 
 type Props = { initialPhotos: Photo[] };
 
@@ -138,7 +139,7 @@ export default function AdminClient({ initialPhotos }: Props) {
                   style={{ aspectRatio: `${p.width} / ${p.height}` }}
                 >
                   <Image
-                    src={`/photos/${p.filename}`}
+                    src={photoSrc(p.filename)}
                     alt={p.title || p.filename}
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"

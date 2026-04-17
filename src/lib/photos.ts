@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import sharp from "sharp";
+import { MAX_IMAGE_PIXELS, stableId } from "@/lib/security";
 
 export type Photo = {
   id: string;
@@ -36,10 +37,7 @@ function normalizeMetadata(input: Partial<PhotoMetadata> & { filename: string })
 }
 
 export function photoIdFromFilename(filename: string): string {
-  return filename
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return stableId(filename);
 }
 
 async function loadMetadataStore(): Promise<MetadataStore> {
@@ -96,36 +94,42 @@ export async function loadPhotos(): Promise<{ photos: Photo[] }> {
     const existing = byFilename.get(filename);
     const fullPath = join(PHOTOS_DIR, filename);
 
-    let width = existing?.width ?? 0;
-    let height = existing?.height ?? 0;
-    if (!width || !height) {
-      const meta = await sharp(fullPath).metadata();
-      width = meta.width ?? 0;
-      height = meta.height ?? 0;
+    try {
+      let width = existing?.width ?? 0;
+      let height = existing?.height ?? 0;
+      if (!width || !height) {
+        const meta = await sharp(fullPath, {
+          limitInputPixels: MAX_IMAGE_PIXELS,
+        }).metadata();
+        width = meta.width ?? 0;
+        height = meta.height ?? 0;
+        dirty = true;
+      }
+
+      const addedAt =
+        existing?.addedAt ??
+        (await stat(fullPath)).birthtime?.toISOString() ??
+        new Date().toISOString();
+
+      if (!existing) dirty = true;
+
+      const metadata: PhotoMetadata = {
+        filename,
+        width,
+        height,
+        title: existing?.title ?? "",
+        caption: existing?.caption ?? "",
+        addedAt,
+      };
+
+      nextStorePhotos.push(metadata);
+      photos.push({
+        id: photoIdFromFilename(filename),
+        ...metadata,
+      });
+    } catch {
       dirty = true;
     }
-
-    const addedAt =
-      existing?.addedAt ??
-      (await stat(fullPath)).birthtime?.toISOString() ??
-      new Date().toISOString();
-
-    if (!existing) dirty = true;
-
-    const metadata: PhotoMetadata = {
-      filename,
-      width,
-      height,
-      title: existing?.title ?? "",
-      caption: existing?.caption ?? "",
-      addedAt,
-    };
-
-    nextStorePhotos.push(metadata);
-    photos.push({
-      id: photoIdFromFilename(filename),
-      ...metadata,
-    });
   }
 
   if (dirty) {
@@ -163,5 +167,5 @@ export async function removePhotoMetadata(filename: string): Promise<void> {
 }
 
 export function photoSrc(p: Pick<Photo, "filename">): string {
-  return `/photos/${p.filename}`;
+  return `/photos/${encodeURIComponent(p.filename)}`;
 }

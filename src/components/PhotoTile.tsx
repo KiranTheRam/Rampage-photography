@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import type { Photo } from "@/lib/photos";
+import { photoSrc } from "@/lib/http";
 
 type Props = {
   photo: Photo;
@@ -44,7 +45,7 @@ export default function PhotoTile({ photo, index, priority = false, onOpen }: Pr
     >
       <motion.div style={{ y }} className="absolute inset-[-6%]">
         <Image
-          src={`/photos/${photo.filename}`}
+          src={photoSrc(photo.filename)}
           alt={photo.title || photo.filename}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

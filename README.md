@@ -4,7 +4,7 @@ Photo portfolio built with Next.js 16. The site includes a public gallery plus a
 
 ## Local development
 
-Create a local env file and set the admin password:
+Create a local env file and set the admin password plus a separate session secret:
 
 ```bash
 cp .env.example .env.local
@@ -34,6 +34,7 @@ Run the container:
 ```bash
 docker run --rm -p 3000:3000 \
   -e ADMIN_PASSWORD='change-this-to-a-long-random-string' \
+  -e ADMIN_SESSION_SECRET='change-this-to-a-random-string-at-least-32-characters-long' \
   rampage-photography
 ```
 
@@ -43,6 +44,7 @@ Or with Docker Compose:
 
 ```bash
 export ADMIN_PASSWORD='change-this-to-a-long-random-string'
+export ADMIN_SESSION_SECRET='change-this-to-a-random-string-at-least-32-characters-long'
 docker compose up --build
 ```
 
@@ -58,5 +60,6 @@ For a real deployment, use one of these approaches:
 ## Production notes
 
 - Set `ADMIN_PASSWORD` in the runtime environment.
+- Set `ADMIN_SESSION_SECRET` in the runtime environment to a long random value.
 - The container listens on port `3000`.
 - `HOSTNAME=0.0.0.0` is already configured in the image so it can accept external traffic.

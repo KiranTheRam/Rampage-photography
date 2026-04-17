@@ -15,7 +15,7 @@ export default function Hero({ count }: { count: number }) {
   return (
     <section
       ref={ref}
-      className="relative z-10 flex min-h-[100svh] flex-col justify-end overflow-hidden px-5 pb-16 pt-24 sm:px-10 sm:pb-20 sm:pt-28"
+      className="relative z-10 flex min-h-[62svh] flex-col justify-start overflow-hidden px-5 pb-10 pt-20 sm:min-h-[68svh] sm:px-10 sm:pb-12 sm:pt-24"
     >
       <div className="aurora" aria-hidden />
       <motion.div style={{ y, opacity }} className="relative z-10">
@@ -47,15 +47,6 @@ export default function Hero({ count }: { count: number }) {
             after the moment left.
           </motion.span>
         </h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
-          className="mt-8 max-w-md text-[13px] leading-relaxed text-[#efe7dc]/65 sm:mt-10 sm:text-sm"
-        >
-          Moments held still — travel, portraits, weather, and the spaces
-          between. Scroll to wander through the archive.
-        </motion.p>
       </motion.div>
 
       <motion.div

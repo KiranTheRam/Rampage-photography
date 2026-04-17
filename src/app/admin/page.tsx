@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { isAuthed } from "@/lib/auth";
 import { loadPhotos } from "@/lib/photos";
 import LoginForm from "./LoginForm";
@@ -6,6 +7,12 @@ import AdminClient from "./AdminClient";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function AdminPage() {
   const authed = await isAuthed();
