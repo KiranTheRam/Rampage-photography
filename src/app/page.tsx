@@ -1,12 +1,12 @@
 import Hero from "@/components/Hero";
 import Gallery from "@/components/Gallery";
-import { loadManifest } from "@/lib/photos";
+import { loadPhotos } from "@/lib/photos";
 import Link from "next/link";
 
 export const revalidate = 0;
 
 export default async function Home() {
-  const { photos } = await loadManifest();
+  const { photos } = await loadPhotos();
 
   return (
     <main className="relative">

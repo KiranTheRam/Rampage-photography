@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { isAuthed } from "@/lib/auth";
-import { loadManifest } from "@/lib/photos";
+import { loadPhotos } from "@/lib/photos";
 import LoginForm from "./LoginForm";
 import AdminClient from "./AdminClient";
 
@@ -9,9 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const authed = await isAuthed();
-  const { photos } = authed
-    ? await loadManifest()
-    : { photos: [] };
+  const { photos } = authed ? await loadPhotos() : { photos: [] };
 
   return (
     <main className="relative min-h-screen">

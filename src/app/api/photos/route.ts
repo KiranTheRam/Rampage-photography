@@ -4,7 +4,7 @@ import { join, extname } from "node:path";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { isAuthed } from "@/lib/auth";
-import { loadManifest, saveManifest, type Photo } from "@/lib/photos";
+import { loadPhotos, type Photo } from "@/lib/photos";
 
 const PHOTOS_DIR = join(process.cwd(), "public", "photos");
 const ALLOWED = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
@@ -33,7 +33,6 @@ export async function POST(req: Request) {
   }
 
   await mkdir(PHOTOS_DIR, { recursive: true });
-  const manifest = await loadManifest();
   const added: Photo[] = [];
 
   for (const file of files) {
@@ -72,15 +71,12 @@ export async function POST(req: Request) {
       caption: files.length === 1 ? caption : "",
       addedAt: new Date().toISOString(),
     };
-    manifest.photos.unshift(photo);
     added.push(photo);
   }
 
-  await saveManifest(manifest);
   return NextResponse.json({ photos: added });
 }
 
 export async function GET() {
-  const manifest = await loadManifest();
-  return NextResponse.json(manifest);
+  return NextResponse.json(await loadPhotos());
 }
