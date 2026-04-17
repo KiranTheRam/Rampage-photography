@@ -36,6 +36,8 @@ yarn-error.log*
 
 # local tooling
 .claude/
+AGENTS.md
+CLAUDE.md
 
 # vercel
 .vercel
