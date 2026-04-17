@@ -9,3 +9,5 @@ Dockerfile
 README.md
 CLAUDE.md
 AGENTS.md
+public/photos
+data/photos.json

@@ -19,12 +19,11 @@ ENV PORT=3000
 
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/data ./data
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-RUN chown -R nextjs:nodejs /app
+RUN mkdir -p /app/public/photos /app/data && chown -R nextjs:nodejs /app
 
 USER nextjs
 

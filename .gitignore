@@ -38,6 +38,8 @@ yarn-error.log*
 .claude/
 AGENTS.md
 CLAUDE.md
+public/photos/
+data/photos.json
 
 # vercel
 .vercel

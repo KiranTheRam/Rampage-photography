@@ -50,7 +50,9 @@ docker compose up --build
 
 ### Persistent uploads
 
-The app treats `public/photos` as the source of truth for what exists, and stores editable metadata in `data/photos.json`. In a plain container these changes live only inside the container filesystem, so they are lost when the container is replaced.
+The app treats `public/photos` as the source of truth for what exists, and stores editable metadata in `data/photos.json`. Those runtime files are intentionally not committed to git and are not baked into the Docker image.
+
+In a plain container, uploaded photos and metadata live only inside the container filesystem, so they are lost when the container is replaced.
 
 For a real deployment, use one of these approaches:
 
