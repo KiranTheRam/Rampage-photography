@@ -1,0 +1,28 @@
+{
+  "photos": [
+    {
+      "filename": "Reading Terminal Market-2.jpg",
+      "width": 5856,
+      "height": 3904,
+      "title": "",
+      "caption": "",
+      "addedAt": "2026-04-21T01:52:56.457Z"
+    },
+    {
+      "filename": "Reading Terminal Market-3.jpg",
+      "width": 6000,
+      "height": 4000,
+      "title": "",
+      "caption": "",
+      "addedAt": "2026-04-21T01:52:56.107Z"
+    },
+    {
+      "filename": "Reading Terminal Market-1.jpg",
+      "width": 3709,
+      "height": 4636,
+      "title": "",
+      "caption": "",
+      "addedAt": "2026-04-21T01:52:55.934Z"
+    }
+  ]
+}

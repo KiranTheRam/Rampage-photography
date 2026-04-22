@@ -16,7 +16,7 @@ import {
   sanitizeText,
 } from "@/lib/security";
 
-const PHOTOS_DIR = join(process.cwd(), "public", "photos");
+const PHOTOS_ROOT = join(process.cwd(), "public", "photos");
 const ALLOWED = new Set(["jpeg", "png", "webp", "avif"]);
 const FORMAT_EXT: Record<string, string> = {
   jpeg: ".jpg",
@@ -36,11 +36,26 @@ function safeSlug(name: string): string {
     .slice(0, 48);
 }
 
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const volumeSlug = searchParams.get("volume");
+  if (!volumeSlug) {
+    return jsonNoStore({ error: "volume query param is required." }, { status: 400 });
+  }
+  return jsonNoStore(await loadPhotos(volumeSlug));
+}
+
 export async function POST(req: Request) {
   const sameOriginError = enforceSameOrigin(req);
   if (sameOriginError) return sameOriginError;
   if (!(await isAuthed())) {
     return jsonNoStore({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const volumeSlug = searchParams.get("volume");
+  if (!volumeSlug) {
+    return jsonNoStore({ error: "volume query param is required." }, { status: 400 });
   }
 
   const form = await req.formData();
@@ -64,7 +79,9 @@ export async function POST(req: Request) {
     );
   }
 
-  await mkdir(PHOTOS_DIR, { recursive: true });
+  const volumeDir = join(PHOTOS_ROOT, volumeSlug);
+  await mkdir(volumeDir, { recursive: true });
+
   const added: Photo[] = [];
   let totalBytes = 0;
 
@@ -97,9 +114,7 @@ export async function POST(req: Request) {
     let height = 0;
     let actualExt = "";
     try {
-      const meta = await sharp(buf, {
-        limitInputPixels: MAX_IMAGE_PIXELS,
-      }).metadata();
+      const meta = await sharp(buf, { limitInputPixels: MAX_IMAGE_PIXELS }).metadata();
       const format = meta.format ?? "";
       if (!ALLOWED.has(format)) {
         return jsonNoStore(
@@ -126,10 +141,11 @@ export async function POST(req: Request) {
     const base = safeSlug(file.name) || "photo";
     const unique = randomBytes(8).toString("hex");
     const filename = `${base}-${unique}${actualExt}`;
-    await writeFile(join(PHOTOS_DIR, filename), buf);
+    await writeFile(join(volumeDir, filename), buf);
 
     const photo: Photo = {
-      id: photoIdFromFilename(filename),
+      id: photoIdFromFilename(volumeSlug, filename),
+      volumeSlug,
       filename,
       width,
       height,
@@ -141,8 +157,4 @@ export async function POST(req: Request) {
   }
 
   return jsonNoStore({ photos: added });
-}
-
-export async function GET() {
-  return jsonNoStore(await loadPhotos());
 }

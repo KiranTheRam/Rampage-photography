@@ -4,8 +4,25 @@ services:
     restart: unless-stopped
     env_file:
       - ./.env.production
+    environment:
+      APP_MODE: "public"
     ports:
       - "3000:3000"
+    volumes:
+      - ./photos:/app/public/photos
+      - ./data:/app/data
+    tmpfs:
+      - /app/.next/cache:size=256m,mode=1777
+
+  admin:
+    image: registry.example.com/rampage-photography:latest
+    restart: unless-stopped
+    env_file:
+      - ./.env.production
+    environment:
+      APP_MODE: "admin"
+    ports:
+      - "3001:3000"
     volumes:
       - ./photos:/app/public/photos
       - ./data:/app/data

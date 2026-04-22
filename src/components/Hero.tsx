@@ -2,8 +2,14 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import type { Volume } from "@/lib/volumes";
 
-export default function Hero({ count }: { count: number }) {
+type Props = {
+  volume: Volume;
+  count: number;
+};
+
+export default function Hero({ volume, count }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -11,6 +17,10 @@ export default function Hero({ count }: { count: number }) {
   });
   const y = useTransform(scrollYProgress, [0, 1], [0, -150]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
+  const lines = volume.heroText.split("\n").filter(Boolean);
+  const line1 = lines[0] ?? "";
+  const line2 = lines[1] ?? null;
 
   return (
     <section
@@ -20,32 +30,44 @@ export default function Hero({ count }: { count: number }) {
       <div className="aurora" aria-hidden />
       <motion.div style={{ y, opacity }} className="relative z-10">
         <div className="mb-8 flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.28em] text-[#efe7dc]/60 sm:mb-10 sm:text-[11px] sm:tracking-[0.32em]">
-          <span>Vol. I — The Archive</span>
+          <span>
+            {volume.volumeNumber ? `${volume.volumeNumber} — ${volume.displayName}` : volume.displayName}
+          </span>
           <span className="text-right">
             {count.toString().padStart(3, "0")} photographs
           </span>
         </div>
         <h1 className="font-display text-[clamp(4.5rem,19vw,12rem)] leading-[0.95] tracking-[-0.02em] sm:leading-[0.88]">
-          <motion.span
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.1, ease: [0.2, 0.7, 0.2, 1] }}
-            className="block"
-          >
-            What stayed
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 1.1,
-              delay: 0.12,
-              ease: [0.2, 0.7, 0.2, 1],
-            }}
-            className="block italic text-[#efe7dc]/80"
-          >
-            after the moment left.
-          </motion.span>
+          {line1 && (
+            <motion.span
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.1, ease: [0.2, 0.7, 0.2, 1] }}
+              className="block"
+            >
+              {line1}
+            </motion.span>
+          )}
+          {line2 && (
+            <motion.span
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.1, delay: 0.12, ease: [0.2, 0.7, 0.2, 1] }}
+              className="block italic text-[#efe7dc]/80"
+            >
+              {line2}
+            </motion.span>
+          )}
+          {!line1 && !line2 && (
+            <motion.span
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.1, ease: [0.2, 0.7, 0.2, 1] }}
+              className="block italic text-[#efe7dc]/80"
+            >
+              {volume.displayName}
+            </motion.span>
+          )}
         </h1>
       </motion.div>
 

@@ -45,7 +45,7 @@ export default function PhotoTile({ photo, index, priority = false, onOpen }: Pr
     >
       <motion.div style={{ y }} className="absolute inset-[-6%]">
         <Image
-          src={photoSrc(photo.filename)}
+          src={photoSrc(photo)}
           alt={photo.title || photo.filename}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

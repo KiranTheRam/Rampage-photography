@@ -81,7 +81,7 @@ export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
             <div className="relative flex-1 px-4 pb-14 sm:h-full sm:w-full sm:p-10 sm:pb-10">
               <div className="relative h-full w-full">
                 <Image
-                  src={photoSrc(photo.filename)}
+                  src={photoSrc(photo)}
                   alt={photo.title || photo.filename}
                   fill
                   sizes="100vw"

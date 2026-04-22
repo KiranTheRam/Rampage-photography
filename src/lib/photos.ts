@@ -6,6 +6,7 @@ import { MAX_IMAGE_PIXELS, stableId } from "@/lib/security";
 export type Photo = {
   id: string;
   filename: string;
+  volumeSlug: string;
   width: number;
   height: number;
   title: string;
@@ -13,19 +14,28 @@ export type Photo = {
   addedAt: string;
 };
 
-type PhotoMetadata = Omit<Photo, "id">;
+type PhotoMetadata = Omit<Photo, "id" | "volumeSlug">;
 type MetadataStore = { photos: PhotoMetadata[] };
 
 const DATA_DIR = join(process.cwd(), "data");
-const PHOTOS_DIR = join(process.cwd(), "public", "photos");
-const METADATA_PATH = join(DATA_DIR, "photos.json");
+const PHOTOS_ROOT = join(process.cwd(), "public", "photos");
 const EXTS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif", ".heic"]);
+
+function photosDir(volumeSlug: string): string {
+  return join(PHOTOS_ROOT, volumeSlug);
+}
+
+function metadataPath(volumeSlug: string): string {
+  return join(DATA_DIR, volumeSlug, "photos.json");
+}
 
 function sortPhotos<T extends { addedAt: string }>(photos: T[]): T[] {
   return [...photos].sort((a, b) => (b.addedAt > a.addedAt ? 1 : -1));
 }
 
-function normalizeMetadata(input: Partial<PhotoMetadata> & { filename: string }): PhotoMetadata {
+function normalizeMetadata(
+  input: Partial<PhotoMetadata> & { filename: string },
+): PhotoMetadata {
   return {
     filename: input.filename,
     width: input.width ?? 0,
@@ -36,19 +46,22 @@ function normalizeMetadata(input: Partial<PhotoMetadata> & { filename: string })
   };
 }
 
-export function photoIdFromFilename(filename: string): string {
-  return stableId(filename);
+export function photoIdFromFilename(volumeSlug: string, filename: string): string {
+  return stableId(`${volumeSlug}/${filename}`);
 }
 
-async function loadMetadataStore(): Promise<MetadataStore> {
+async function loadMetadataStore(volumeSlug: string): Promise<MetadataStore> {
   try {
-    const raw = await readFile(METADATA_PATH, "utf8");
-    const parsed = JSON.parse(raw) as { photos?: Array<Partial<PhotoMetadata> & { filename: string }> };
+    const raw = await readFile(metadataPath(volumeSlug), "utf8");
+    const parsed = JSON.parse(raw) as {
+      photos?: Array<Partial<PhotoMetadata> & { filename: string }>;
+    };
     return {
       photos: Array.isArray(parsed.photos)
         ? parsed.photos
-            .filter((photo): photo is Partial<PhotoMetadata> & { filename: string } =>
-              typeof photo?.filename === "string" && photo.filename.length > 0,
+            .filter(
+              (photo): photo is Partial<PhotoMetadata> & { filename: string } =>
+                typeof photo?.filename === "string" && photo.filename.length > 0,
             )
             .map(normalizeMetadata)
         : [],
@@ -58,25 +71,25 @@ async function loadMetadataStore(): Promise<MetadataStore> {
   }
 }
 
-async function saveMetadataStore(store: MetadataStore): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
+async function saveMetadataStore(
+  volumeSlug: string,
+  store: MetadataStore,
+): Promise<void> {
+  const dir = join(DATA_DIR, volumeSlug);
+  await mkdir(dir, { recursive: true });
   await writeFile(
-    METADATA_PATH,
-    JSON.stringify(
-      { photos: sortPhotos(store.photos).map(normalizeMetadata) },
-      null,
-      2,
-    ),
+    metadataPath(volumeSlug),
+    JSON.stringify({ photos: sortPhotos(store.photos).map(normalizeMetadata) }, null, 2),
   );
 }
 
-export async function loadPhotos(): Promise<{ photos: Photo[] }> {
-  const store = await loadMetadataStore();
+export async function loadPhotos(volumeSlug: string): Promise<{ photos: Photo[] }> {
+  const store = await loadMetadataStore(volumeSlug);
   const byFilename = new Map(store.photos.map((photo) => [photo.filename, photo]));
 
   let entries: string[] = [];
   try {
-    entries = await readdir(PHOTOS_DIR);
+    entries = await readdir(photosDir(volumeSlug));
   } catch {
     return { photos: [] };
   }
@@ -92,7 +105,7 @@ export async function loadPhotos(): Promise<{ photos: Photo[] }> {
 
   for (const filename of filenames) {
     const existing = byFilename.get(filename);
-    const fullPath = join(PHOTOS_DIR, filename);
+    const fullPath = join(photosDir(volumeSlug), filename);
 
     try {
       let width = existing?.width ?? 0;
@@ -124,7 +137,8 @@ export async function loadPhotos(): Promise<{ photos: Photo[] }> {
 
       nextStorePhotos.push(metadata);
       photos.push({
-        id: photoIdFromFilename(filename),
+        id: photoIdFromFilename(volumeSlug, filename),
+        volumeSlug,
         ...metadata,
       });
     } catch {
@@ -133,39 +147,33 @@ export async function loadPhotos(): Promise<{ photos: Photo[] }> {
   }
 
   if (dirty) {
-    await saveMetadataStore({ photos: nextStorePhotos });
+    await saveMetadataStore(volumeSlug, { photos: nextStorePhotos });
   }
 
   return { photos: sortPhotos(photos) };
 }
 
 export async function upsertPhotoMetadata(
+  volumeSlug: string,
   filename: string,
   patch: Partial<Omit<PhotoMetadata, "filename">>,
 ): Promise<Photo> {
-  const store = await loadMetadataStore();
+  const store = await loadMetadataStore(volumeSlug);
   const idx = store.photos.findIndex((photo) => photo.filename === filename);
-
   if (idx < 0) {
     throw new Error(`Photo metadata not found for ${filename}`);
   }
-
-  store.photos[idx] = {
-    ...store.photos[idx],
-    ...patch,
-    filename,
-  };
-  await saveMetadataStore(store);
-  return { id: photoIdFromFilename(filename), ...store.photos[idx] };
+  store.photos[idx] = { ...store.photos[idx], ...patch, filename };
+  await saveMetadataStore(volumeSlug, store);
+  return { id: photoIdFromFilename(volumeSlug, filename), volumeSlug, ...store.photos[idx] };
 }
 
-export async function removePhotoMetadata(filename: string): Promise<void> {
-  const store = await loadMetadataStore();
+export async function removePhotoMetadata(
+  volumeSlug: string,
+  filename: string,
+): Promise<void> {
+  const store = await loadMetadataStore(volumeSlug);
   const next = store.photos.filter((photo) => photo.filename !== filename);
   if (next.length === store.photos.length) return;
-  await saveMetadataStore({ photos: next });
-}
-
-export function photoSrc(p: Pick<Photo, "filename">): string {
-  return `/photos/${encodeURIComponent(p.filename)}`;
+  await saveMetadataStore(volumeSlug, { photos: next });
 }
