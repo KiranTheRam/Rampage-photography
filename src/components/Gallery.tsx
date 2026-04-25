@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Photo } from "@/lib/photos";
+import { optimizedPhotoSrc } from "@/lib/http";
 import PhotoTile from "./PhotoTile";
 import Lightbox from "./Lightbox";
 
 type Props = { photos: Photo[] };
+
+const LIGHTBOX_PRELOAD_WIDTH = 2048;
+const warmedPhotos = new Set<string>();
 
 // Distribute photos across N columns greedily by shortest column — gives
 // a balanced masonry that respects source order without JS-layout.
@@ -30,15 +34,41 @@ export default function Gallery({ photos }: Props) {
   const cols3 = useMemo(() => columnize(photos, 3), [photos]);
   const cols2 = useMemo(() => columnize(photos, 2), [photos]);
 
-  const open = (p: Photo) => setActive(p);
+  const warmPhoto = useCallback((p: Photo) => {
+    if (typeof window === "undefined") return;
+
+    const src = optimizedPhotoSrc(p, LIGHTBOX_PRELOAD_WIDTH);
+    if (warmedPhotos.has(src)) return;
+
+    warmedPhotos.add(src);
+    const image = new window.Image();
+    image.decoding = "async";
+    image.src = src;
+  }, []);
+
+  const open = (p: Photo) => {
+    warmPhoto(p);
+    setActive(p);
+  };
   const close = () => setActive(null);
   const step = (dir: -1 | 1) => {
     if (!active) return;
     const i = photos.findIndex((p) => p.id === active.id);
     if (i < 0) return;
     const next = photos[(i + dir + photos.length) % photos.length];
+    warmPhoto(next);
     setActive(next);
   };
+
+  useEffect(() => {
+    if (!active) return;
+
+    const i = photos.findIndex((p) => p.id === active.id);
+    if (i < 0) return;
+
+    warmPhoto(photos[(i + 1) % photos.length]);
+    warmPhoto(photos[(i - 1 + photos.length) % photos.length]);
+  }, [active, photos, warmPhoto]);
 
   return (
     <>
@@ -55,6 +85,7 @@ export default function Gallery({ photos }: Props) {
               index={i}
               priority={i < 2}
               onOpen={open}
+              onWarm={warmPhoto}
             />
           ))}
         </div>
@@ -69,6 +100,7 @@ export default function Gallery({ photos }: Props) {
                   index={ci * 100 + i}
                   priority={i === 0}
                   onOpen={open}
+                  onWarm={warmPhoto}
                 />
               ))}
             </div>
@@ -88,6 +120,7 @@ export default function Gallery({ photos }: Props) {
                   index={ci * 100 + i}
                   priority={i === 0}
                   onOpen={open}
+                  onWarm={warmPhoto}
                 />
               ))}
             </div>

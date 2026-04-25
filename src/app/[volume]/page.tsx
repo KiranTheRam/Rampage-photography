@@ -28,9 +28,6 @@ export default async function VolumePage({ params }: Props) {
           <Link href="/" data-cursor="hover" className="hover:text-[#efe7dc]">
             ← Volumes
           </Link>
-          <a href="#gallery" data-cursor="hover" className="hover:text-[#efe7dc]">
-            Work
-          </a>
         </div>
       </nav>
 

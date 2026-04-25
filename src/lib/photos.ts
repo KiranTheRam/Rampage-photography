@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join, extname } from "node:path";
 import sharp from "sharp";
+import { normalizeCameraMetadata, parseCameraMetadata } from "@/lib/exif";
 import { MAX_IMAGE_PIXELS, stableId } from "@/lib/security";
 
 export type Photo = {
@@ -11,6 +12,12 @@ export type Photo = {
   height: number;
   title: string;
   caption: string;
+  aperture: string;
+  shutterSpeed: string;
+  iso: string;
+  camera: string;
+  lens: string;
+  focalLength: string;
   addedAt: string;
 };
 
@@ -36,12 +43,19 @@ function sortPhotos<T extends { addedAt: string }>(photos: T[]): T[] {
 function normalizeMetadata(
   input: Partial<PhotoMetadata> & { filename: string },
 ): PhotoMetadata {
+  const camera = normalizeCameraMetadata(input);
   return {
     filename: input.filename,
     width: input.width ?? 0,
     height: input.height ?? 0,
     title: input.title ?? "",
     caption: input.caption ?? "",
+    aperture: camera.aperture,
+    shutterSpeed: camera.shutterSpeed,
+    iso: camera.iso,
+    camera: camera.camera,
+    lens: camera.lens,
+    focalLength: camera.focalLength,
     addedAt: input.addedAt ?? new Date().toISOString(),
   };
 }
@@ -110,13 +124,61 @@ export async function loadPhotos(volumeSlug: string): Promise<{ photos: Photo[] 
     try {
       let width = existing?.width ?? 0;
       let height = existing?.height ?? 0;
-      if (!width || !height) {
+      let aperture = existing?.aperture ?? "";
+      let shutterSpeed = existing?.shutterSpeed ?? "";
+      let iso = existing?.iso ?? "";
+      let camera = existing?.camera ?? "";
+      let lens = existing?.lens ?? "";
+      let focalLength = existing?.focalLength ?? "";
+      if (
+        !width ||
+        !height ||
+        !aperture ||
+        !shutterSpeed ||
+        !iso ||
+        !camera ||
+        !lens ||
+        !focalLength
+      ) {
         const meta = await sharp(fullPath, {
           limitInputPixels: MAX_IMAGE_PIXELS,
         }).metadata();
-        width = meta.width ?? 0;
-        height = meta.height ?? 0;
-        dirty = true;
+        if (!width || !height) {
+          width = meta.width ?? 0;
+          height = meta.height ?? 0;
+          dirty = true;
+        }
+        if (
+          (!aperture ||
+            !shutterSpeed ||
+            !iso ||
+            !camera ||
+            !lens ||
+            !focalLength) &&
+          meta.exif
+        ) {
+          const parsedCamera = parseCameraMetadata(meta.exif);
+          const previousCamera = [
+            aperture,
+            shutterSpeed,
+            iso,
+            camera,
+            lens,
+            focalLength,
+          ].join("|");
+          aperture = aperture || parsedCamera.aperture;
+          shutterSpeed = shutterSpeed || parsedCamera.shutterSpeed;
+          iso = iso || parsedCamera.iso;
+          camera = camera || parsedCamera.camera;
+          lens = lens || parsedCamera.lens;
+          focalLength = focalLength || parsedCamera.focalLength;
+          if (
+            [aperture, shutterSpeed, iso, camera, lens, focalLength].join("|") !==
+            previousCamera
+          ) {
+            dirty = true;
+          }
+        }
       }
 
       const addedAt =
@@ -132,6 +194,12 @@ export async function loadPhotos(volumeSlug: string): Promise<{ photos: Photo[] 
         height,
         title: existing?.title ?? "",
         caption: existing?.caption ?? "",
+        aperture,
+        shutterSpeed,
+        iso,
+        camera,
+        lens,
+        focalLength,
         addedAt,
       };
 

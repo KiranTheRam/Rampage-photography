@@ -5,15 +5,23 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
 import type { Photo } from "@/lib/photos";
 import { photoSrc } from "@/lib/http";
+import CameraMetadata from "./CameraMetadata";
 
 type Props = {
   photo: Photo;
   index: number;
   priority?: boolean;
   onOpen: (p: Photo) => void;
+  onWarm?: (p: Photo) => void;
 };
 
-export default function PhotoTile({ photo, index, priority = false, onOpen }: Props) {
+export default function PhotoTile({
+  photo,
+  index,
+  priority = false,
+  onOpen,
+  onWarm,
+}: Props) {
   const ref = useRef<HTMLButtonElement>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -30,6 +38,9 @@ export default function PhotoTile({ photo, index, priority = false, onOpen }: Pr
       ref={ref}
       type="button"
       onClick={() => onOpen(photo)}
+      onFocus={() => onWarm?.(photo)}
+      onPointerEnter={() => onWarm?.(photo)}
+      onPointerDown={() => onWarm?.(photo)}
       data-cursor="view"
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -56,16 +67,16 @@ export default function PhotoTile({ photo, index, priority = false, onOpen }: Pr
         />
       </motion.div>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
 
-      {photo.title && (
-        <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between text-[11px] uppercase tracking-[0.22em] text-[#efe7dc]/85 transition-colors duration-500 sm:text-[#efe7dc]/0 sm:group-hover:text-[#efe7dc]/90">
-          <span className="truncate">{photo.title}</span>
-          <span className="shrink-0 pl-3 font-mono text-[10px] text-[#efe7dc]/60 sm:text-[#efe7dc]/0 sm:group-hover:text-[#efe7dc]/70">
-            {String(index + 1).padStart(3, "0")}
-          </span>
-        </div>
-      )}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 translate-y-1 p-3 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:p-4">
+        <CameraMetadata
+          photo={photo}
+          className="grid grid-cols-3 gap-2"
+          labelClassName="text-[10px] sm:text-[11px]"
+          valueClassName="text-xs sm:text-sm"
+        />
+      </div>
     </motion.button>
   );
 }

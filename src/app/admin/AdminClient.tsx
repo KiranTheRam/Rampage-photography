@@ -469,6 +469,76 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
                               data-cursor="hover"
                               className="w-full bg-transparent text-[11px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
                             />
+                            <div className="grid grid-cols-3 gap-2">
+                              <input
+                                defaultValue={p.aperture}
+                                placeholder="f/1.8"
+                                aria-label="Aperture"
+                                onBlur={(e) =>
+                                  e.target.value !== p.aperture &&
+                                  saveMeta(p.id, { aperture: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                              <input
+                                defaultValue={p.shutterSpeed}
+                                placeholder="1/250"
+                                aria-label="Shutter speed"
+                                onBlur={(e) =>
+                                  e.target.value !== p.shutterSpeed &&
+                                  saveMeta(p.id, { shutterSpeed: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                              <input
+                                defaultValue={p.iso}
+                                placeholder="ISO"
+                                aria-label="ISO"
+                                onBlur={(e) =>
+                                  e.target.value !== p.iso &&
+                                  saveMeta(p.id, { iso: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <input
+                                defaultValue={p.camera}
+                                placeholder="Camera"
+                                aria-label="Camera"
+                                onBlur={(e) =>
+                                  e.target.value !== p.camera &&
+                                  saveMeta(p.id, { camera: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                              <input
+                                defaultValue={p.lens}
+                                placeholder="Lens"
+                                aria-label="Lens"
+                                onBlur={(e) =>
+                                  e.target.value !== p.lens &&
+                                  saveMeta(p.id, { lens: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                              <input
+                                defaultValue={p.focalLength}
+                                placeholder="35mm"
+                                aria-label="Focal length"
+                                onBlur={(e) =>
+                                  e.target.value !== p.focalLength &&
+                                  saveMeta(p.id, { focalLength: e.target.value })
+                                }
+                                data-cursor="hover"
+                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                              />
+                            </div>
                             <button
                               onClick={() => remove(p.id)}
                               data-cursor="hover"

@@ -3,6 +3,7 @@ import { join, extname } from "node:path";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import { isAuthed } from "@/lib/auth";
+import { parseCameraMetadata } from "@/lib/exif";
 import { loadPhotos, photoIdFromFilename, type Photo } from "@/lib/photos";
 import {
   MAX_CAPTION_LENGTH,
@@ -113,6 +114,12 @@ export async function POST(req: Request) {
     let width = 0;
     let height = 0;
     let actualExt = "";
+    let aperture = "";
+    let shutterSpeed = "";
+    let iso = "";
+    let camera = "";
+    let lens = "";
+    let focalLength = "";
     try {
       const meta = await sharp(buf, { limitInputPixels: MAX_IMAGE_PIXELS }).metadata();
       const format = meta.format ?? "";
@@ -131,6 +138,13 @@ export async function POST(req: Request) {
         );
       }
       actualExt = FORMAT_EXT[format];
+      const parsedCamera = parseCameraMetadata(meta.exif);
+      aperture = parsedCamera.aperture;
+      shutterSpeed = parsedCamera.shutterSpeed;
+      iso = parsedCamera.iso;
+      camera = parsedCamera.camera;
+      lens = parsedCamera.lens;
+      focalLength = parsedCamera.focalLength;
     } catch {
       return jsonNoStore(
         { error: `Could not read image: ${file.name}` },
@@ -151,6 +165,12 @@ export async function POST(req: Request) {
       height,
       title: files.length === 1 ? title : "",
       caption: files.length === 1 ? caption : "",
+      aperture,
+      shutterSpeed,
+      iso,
+      camera,
+      lens,
+      focalLength,
       addedAt: new Date().toISOString(),
     };
     added.push(photo);

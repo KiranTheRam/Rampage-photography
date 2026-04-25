@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   const authed = await isAuthed();
 
-  let volumes = authed ? await loadVolumes() : [];
+  const volumes = authed ? await loadVolumes() : [];
   const defaultVolume = volumes[0] ?? null;
   const { photos } =
     authed && defaultVolume ? await loadPhotos(defaultVolume.slug) : { photos: [] };

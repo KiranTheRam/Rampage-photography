@@ -86,53 +86,6 @@ body {
   animation: aurora-drift 28s ease-in-out infinite;
 }
 
-/* Grain overlay — animated SVG noise via CSS */
-@keyframes grain-shift {
-  0% {
-    transform: translate(0, 0);
-  }
-  10% {
-    transform: translate(-5%, -10%);
-  }
-  20% {
-    transform: translate(-15%, 5%);
-  }
-  30% {
-    transform: translate(7%, -25%);
-  }
-  40% {
-    transform: translate(-5%, 25%);
-  }
-  50% {
-    transform: translate(-15%, 10%);
-  }
-  60% {
-    transform: translate(15%, 0);
-  }
-  70% {
-    transform: translate(0, 15%);
-  }
-  80% {
-    transform: translate(3%, 35%);
-  }
-  90% {
-    transform: translate(-10%, 10%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-.grain {
-  position: fixed;
-  inset: -100%;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.09;
-  mix-blend-mode: overlay;
-  animation: grain-shift 8s steps(10) infinite;
-}
-
 /* Small utility for image fade-in once loaded */
 .photo-fade {
   opacity: 0;
@@ -144,8 +97,7 @@ body {
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .aurora,
-  .grain {
+  .aurora {
     animation: none !important;
   }
   *,

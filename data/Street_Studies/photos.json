@@ -6,6 +6,12 @@
       "height": 3904,
       "title": "",
       "caption": "",
+      "aperture": "f/1.8",
+      "shutterSpeed": "1/1000",
+      "iso": "1250",
+      "camera": "SONY ILCE-6400",
+      "lens": "E 35mm F1.8 OSS",
+      "focalLength": "35mm",
       "addedAt": "2026-04-21T01:52:56.457Z"
     },
     {
@@ -14,6 +20,12 @@
       "height": 4000,
       "title": "",
       "caption": "",
+      "aperture": "f/1.8",
+      "shutterSpeed": "1/1000",
+      "iso": "1250",
+      "camera": "SONY ILCE-6400",
+      "lens": "E 35mm F1.8 OSS",
+      "focalLength": "35mm",
       "addedAt": "2026-04-21T01:52:56.107Z"
     },
     {
@@ -22,6 +34,12 @@
       "height": 4636,
       "title": "",
       "caption": "",
+      "aperture": "f/1.8",
+      "shutterSpeed": "1/800",
+      "iso": "320",
+      "camera": "SONY ILCE-6400",
+      "lens": "E 35mm F1.8 OSS",
+      "focalLength": "35mm",
       "addedAt": "2026-04-21T01:52:55.934Z"
     }
   ]

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Grain from "@/components/Grain";
 import Cursor from "@/components/Cursor";
 import "./globals.css";
 
@@ -14,7 +13,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full bg-black text-[#efe7dc] font-sans selection:bg-[#efe7dc] selection:text-black">
-        <Grain />
         <Cursor />
         {children}
       </body>

@@ -16,6 +16,8 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export const dynamic = "force-dynamic";
 
+const MAX_CAMERA_FIELD_LENGTH = 24;
+
 export async function DELETE(_req: Request, ctx: Ctx) {
   const sameOriginError = enforceSameOrigin(_req);
   if (sameOriginError) return sameOriginError;
@@ -75,6 +77,30 @@ export async function PATCH(req: Request, ctx: Ctx) {
       typeof body.caption === "string"
         ? sanitizeText(body.caption, MAX_CAPTION_LENGTH)
         : photo.caption,
+    aperture:
+      typeof body.aperture === "string"
+        ? sanitizeText(body.aperture, MAX_CAMERA_FIELD_LENGTH)
+        : photo.aperture,
+    shutterSpeed:
+      typeof body.shutterSpeed === "string"
+        ? sanitizeText(body.shutterSpeed, MAX_CAMERA_FIELD_LENGTH)
+        : photo.shutterSpeed,
+    iso:
+      typeof body.iso === "string"
+        ? sanitizeText(body.iso, MAX_CAMERA_FIELD_LENGTH)
+        : photo.iso,
+    camera:
+      typeof body.camera === "string"
+        ? sanitizeText(body.camera, MAX_CAMERA_FIELD_LENGTH * 3)
+        : photo.camera,
+    lens:
+      typeof body.lens === "string"
+        ? sanitizeText(body.lens, MAX_CAMERA_FIELD_LENGTH * 3)
+        : photo.lens,
+    focalLength:
+      typeof body.focalLength === "string"
+        ? sanitizeText(body.focalLength, MAX_CAMERA_FIELD_LENGTH)
+        : photo.focalLength,
   });
   return jsonNoStore({ photo: updated });
 }
