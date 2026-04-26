@@ -9,12 +9,37 @@ import CameraMetadata from "./CameraMetadata";
 
 type Props = {
   photo: Photo | null;
+  navDirection: -1 | 0 | 1;
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
 };
 
-export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
+const photoMotion = {
+  enter: (direction: -1 | 0 | 1) => ({
+    opacity: 0,
+    y: direction === 0 ? 0 : direction > 0 ? 42 : -42,
+    scale: 0.985,
+  }),
+  center: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+  },
+  exit: (direction: -1 | 0 | 1) => ({
+    opacity: 0,
+    y: direction === 0 ? 0 : direction > 0 ? -30 : 30,
+    scale: 0.985,
+  }),
+};
+
+export default function Lightbox({
+  photo,
+  navDirection,
+  onClose,
+  onPrev,
+  onNext,
+}: Props) {
   const [loadedPhotoId, setLoadedPhotoId] = useState<string | null>(null);
   const loaded = photo ? loadedPhotoId === photo.id : false;
 
@@ -24,8 +49,8 @@ export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft") onPrev();
-      else if (e.key === "ArrowRight") onNext();
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") onPrev();
+      else if (e.key === "ArrowRight" || e.key === "ArrowDown") onNext();
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -47,20 +72,24 @@ export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
           style={{ height: "100dvh" }}
           onClick={onClose}
         >
+          <AnimatePresence mode="popLayout" custom={navDirection} initial={false}>
           <motion.div
             key={photo.id}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.45, ease: [0.2, 0.7, 0.2, 1] }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
+            custom={navDirection}
+            variants={photoMotion}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.24, ease: [0.22, 0.8, 0.22, 1] }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.18}
+            dragMomentum={false}
             onDragEnd={(_e, info) => {
-              if (info.offset.x < -80 || info.velocity.x < -500) onNext();
-              else if (info.offset.x > 80 || info.velocity.x > 500) onPrev();
+              if (info.offset.y < -64 || info.velocity.y < -420) onNext();
+              else if (info.offset.y > 64 || info.velocity.y > 420) onPrev();
             }}
-            className="relative flex h-full w-full touch-pan-y flex-col sm:block"
+            className="absolute inset-0 flex h-full w-full touch-none flex-col sm:block"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Mobile top bar — close button lives above the image */}
@@ -108,14 +137,9 @@ export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
               </div>
               <aside className="hidden min-h-0 flex-col justify-center pl-6 pr-12 sm:flex md:pr-14">
                 <div className="max-w-full">
-                  <p className="truncate text-[11px] uppercase tracking-[0.28em] text-[#efe7dc]/45">
+                  <p className="font-display text-3xl leading-tight text-[#efe7dc] md:text-4xl">
                     {photo.title || "Photograph"}
                   </p>
-                  {photo.caption && (
-                    <p className="mt-3 text-base leading-7 text-[#efe7dc]/60">
-                      {photo.caption}
-                    </p>
-                  )}
                   <CameraMetadata
                     photo={photo}
                     expanded
@@ -166,22 +190,18 @@ export default function Lightbox({ photo, onClose, onPrev, onNext }: Props) {
               →
             </button>
 
-            {/* Mobile bottom: caption + swipe hint */}
+            {/* Mobile bottom: metadata + swipe hint */}
             <div className="pointer-events-none flex shrink-0 flex-col items-center gap-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 text-[10px] uppercase tracking-[0.25em] text-[#efe7dc]/40 sm:hidden">
-              {photo.caption && (
-                <span className="max-w-full truncate normal-case tracking-normal text-[#efe7dc]/60">
-                  {photo.caption}
-                </span>
-              )}
               <CameraMetadata
                 photo={photo}
                 className="grid w-full max-w-xs grid-cols-3 gap-2 text-center"
                 labelClassName="text-[10px]"
                 valueClassName="text-xs"
               />
-              <span>swipe · tap to close</span>
+              <span>swipe up/down · tap to close</span>
             </div>
           </motion.div>
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

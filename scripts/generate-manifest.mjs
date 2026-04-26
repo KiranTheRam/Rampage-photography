@@ -15,7 +15,6 @@ function normalizePhoto(photo) {
     width: photo.width ?? 0,
     height: photo.height ?? 0,
     title: photo.title ?? "",
-    caption: photo.caption ?? "",
     addedAt: photo.addedAt ?? new Date().toISOString(),
   };
 }
@@ -55,7 +54,6 @@ async function main() {
         width: meta.width ?? 0,
         height: meta.height ?? 0,
         title: prev?.title ?? "",
-        caption: prev?.caption ?? "",
         addedAt: prev?.addedAt ?? s.birthtime?.toISOString() ?? new Date().toISOString(),
       };
       photos.push(normalizePhoto(photo));

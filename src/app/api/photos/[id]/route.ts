@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { isAuthed } from "@/lib/auth";
 import { loadPhotos, removePhotoMetadata, upsertPhotoMetadata } from "@/lib/photos";
 import {
-  MAX_CAPTION_LENGTH,
   MAX_TITLE_LENGTH,
   enforceSameOrigin,
   jsonNoStore,
@@ -73,10 +72,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
       typeof body.title === "string"
         ? sanitizeText(body.title, MAX_TITLE_LENGTH)
         : photo.title,
-    caption:
-      typeof body.caption === "string"
-        ? sanitizeText(body.caption, MAX_CAPTION_LENGTH)
-        : photo.caption,
     aperture:
       typeof body.aperture === "string"
         ? sanitizeText(body.aperture, MAX_CAMERA_FIELD_LENGTH)

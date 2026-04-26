@@ -6,7 +6,6 @@ import { isAuthed } from "@/lib/auth";
 import { parseCameraMetadata } from "@/lib/exif";
 import { loadPhotos, photoIdFromFilename, type Photo } from "@/lib/photos";
 import {
-  MAX_CAPTION_LENGTH,
   MAX_IMAGE_PIXELS,
   MAX_TITLE_LENGTH,
   MAX_UPLOAD_FILE_SIZE_BYTES,
@@ -64,10 +63,6 @@ export async function POST(req: Request) {
   const title = sanitizeText(
     (form.get("title") as string | null) ?? "",
     MAX_TITLE_LENGTH,
-  );
-  const caption = sanitizeText(
-    (form.get("caption") as string | null) ?? "",
-    MAX_CAPTION_LENGTH,
   );
 
   if (files.length === 0) {
@@ -164,7 +159,6 @@ export async function POST(req: Request) {
       width,
       height,
       title: files.length === 1 ? title : "",
-      caption: files.length === 1 ? caption : "",
       aperture,
       shutterSpeed,
       iso,

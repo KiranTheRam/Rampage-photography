@@ -9,7 +9,6 @@ export const MAX_UPLOAD_FILE_SIZE_BYTES = 30 * 1024 * 1024;
 export const MAX_UPLOAD_TOTAL_BYTES = 80 * 1024 * 1024;
 export const MAX_IMAGE_PIXELS = 60_000_000;
 export const MAX_TITLE_LENGTH = 120;
-export const MAX_CAPTION_LENGTH = 500;
 
 type RateLimitEntry = {
   count: number;

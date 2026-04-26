@@ -70,6 +70,11 @@ export default function PhotoTile({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
 
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 translate-y-1 p-3 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 sm:p-4">
+        {photo.title && (
+          <p className="mb-3 line-clamp-2 font-display text-xl leading-tight text-[#efe7dc] sm:text-2xl">
+            {photo.title}
+          </p>
+        )}
         <CameraMetadata
           photo={photo}
           className="grid grid-cols-3 gap-2"

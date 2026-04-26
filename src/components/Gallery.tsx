@@ -8,7 +8,8 @@ import Lightbox from "./Lightbox";
 
 type Props = { photos: Photo[] };
 
-const LIGHTBOX_PRELOAD_WIDTH = 2048;
+const LIGHTBOX_PLACEHOLDER_PRELOAD_WIDTH = 750;
+const LIGHTBOX_FULL_PRELOAD_WIDTH = 2048;
 const warmedPhotos = new Set<string>();
 
 // Distribute photos across N columns greedily by shortest column — gives
@@ -30,6 +31,7 @@ function columnize(photos: Photo[], columns: number): Photo[][] {
 
 export default function Gallery({ photos }: Props) {
   const [active, setActive] = useState<Photo | null>(null);
+  const [navDirection, setNavDirection] = useState<-1 | 0 | 1>(0);
 
   const cols3 = useMemo(() => columnize(photos, 3), [photos]);
   const cols2 = useMemo(() => columnize(photos, 2), [photos]);
@@ -37,17 +39,23 @@ export default function Gallery({ photos }: Props) {
   const warmPhoto = useCallback((p: Photo) => {
     if (typeof window === "undefined") return;
 
-    const src = optimizedPhotoSrc(p, LIGHTBOX_PRELOAD_WIDTH);
-    if (warmedPhotos.has(src)) return;
+    for (const width of [
+      LIGHTBOX_PLACEHOLDER_PRELOAD_WIDTH,
+      LIGHTBOX_FULL_PRELOAD_WIDTH,
+    ]) {
+      const src = optimizedPhotoSrc(p, width);
+      if (warmedPhotos.has(src)) continue;
 
-    warmedPhotos.add(src);
-    const image = new window.Image();
-    image.decoding = "async";
-    image.src = src;
+      warmedPhotos.add(src);
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = src;
+    }
   }, []);
 
   const open = (p: Photo) => {
     warmPhoto(p);
+    setNavDirection(0);
     setActive(p);
   };
   const close = () => setActive(null);
@@ -57,6 +65,7 @@ export default function Gallery({ photos }: Props) {
     if (i < 0) return;
     const next = photos[(i + dir + photos.length) % photos.length];
     warmPhoto(next);
+    setNavDirection(dir);
     setActive(next);
   };
 
@@ -130,6 +139,7 @@ export default function Gallery({ photos }: Props) {
 
       <Lightbox
         photo={active}
+        navDirection={navDirection}
         onClose={close}
         onPrev={() => step(-1)}
         onNext={() => step(1)}

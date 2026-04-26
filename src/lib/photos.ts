@@ -11,7 +11,6 @@ export type Photo = {
   width: number;
   height: number;
   title: string;
-  caption: string;
   aperture: string;
   shutterSpeed: string;
   iso: string;
@@ -49,7 +48,6 @@ function normalizeMetadata(
     width: input.width ?? 0,
     height: input.height ?? 0,
     title: input.title ?? "",
-    caption: input.caption ?? "",
     aperture: camera.aperture,
     shutterSpeed: camera.shutterSpeed,
     iso: camera.iso,
@@ -193,7 +191,6 @@ export async function loadPhotos(volumeSlug: string): Promise<{ photos: Photo[] 
         width,
         height,
         title: existing?.title ?? "",
-        caption: existing?.caption ?? "",
         aperture,
         shutterSpeed,
         iso,

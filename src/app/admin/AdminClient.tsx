@@ -14,12 +14,20 @@ type Props = {
 };
 
 type Tab = "photos" | "settings";
+type TitleOptionsState = {
+  loading: boolean;
+  options: string[];
+  error: string | null;
+};
 
 export default function AdminClient({ initialPhotos, initialVolume, allVolumes }: Props) {
   const [volumes, setVolumes] = useState(allVolumes);
   const [selectedVolume, setSelectedVolume] = useState<Volume | null>(initialVolume);
   const [photos, setPhotos] = useState(initialPhotos);
   const [tab, setTab] = useState<Tab>("photos");
+  const [titleOptions, setTitleOptions] = useState<Record<string, TitleOptionsState>>({});
+  const [titleModalPhotoId, setTitleModalPhotoId] = useState<string | null>(null);
+  const [titleGuidance, setTitleGuidance] = useState("");
 
   // Upload state
   const [uploading, setUploading] = useState(false);
@@ -56,6 +64,9 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
     });
     setSettingsSaved(false);
     setUploadError(null);
+    setTitleOptions({});
+    setTitleModalPhotoId(null);
+    setTitleGuidance("");
     setTab("photos");
     const res = await fetch(`/api/photos?volume=${encodeURIComponent(vol.slug)}`);
     if (res.ok) {
@@ -112,6 +123,60 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
       const body = (await res.json()) as { photo: Photo };
       setPhotos((prev) => prev.map((p) => (p.id === id ? body.photo : p)));
     }
+  };
+
+  const generateTitleOptions = async (photo: Photo, guidance: string) => {
+    if (!selectedVolume) return;
+    setTitleOptions((prev) => ({
+      ...prev,
+      [photo.id]: {
+        loading: true,
+        options: prev[photo.id]?.options ?? [],
+        error: null,
+      },
+    }));
+
+    const res = await fetch(
+      `/api/photos/${photo.id}/title-options?volume=${encodeURIComponent(
+        selectedVolume.slug,
+      )}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guidance }),
+      },
+    );
+    const body = (await res.json().catch(() => ({}))) as {
+      titles?: string[];
+      error?: string;
+    };
+
+    if (res.ok && Array.isArray(body.titles)) {
+      setTitleOptions((prev) => ({
+        ...prev,
+        [photo.id]: { loading: false, options: body.titles ?? [], error: null },
+      }));
+    } else {
+      setTitleOptions((prev) => ({
+        ...prev,
+        [photo.id]: {
+          loading: false,
+          options: prev[photo.id]?.options ?? [],
+          error: body.error ?? "Could not generate titles.",
+        },
+      }));
+    }
+  };
+
+  const openTitleGenerator = (photo: Photo) => {
+    setTitleModalPhotoId(photo.id);
+    setTitleGuidance("");
+    generateTitleOptions(photo, "");
+  };
+
+  const applyTitleOption = async (photoId: string, title: string) => {
+    await saveMeta(photoId, { title });
+    setTitleModalPhotoId(null);
   };
 
   const saveSettings = async () => {
@@ -185,8 +250,15 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
     window.location.reload();
   };
 
+  const titleModalPhoto = titleModalPhotoId
+    ? photos.find((p) => p.id === titleModalPhotoId) ?? null
+    : null;
+  const titleModalState = titleModalPhoto
+    ? titleOptions[titleModalPhoto.id] ?? { loading: false, options: [], error: null }
+    : null;
+
   return (
-    <div className="relative z-10 mx-auto max-w-6xl px-5 pb-32 pt-24 sm:px-10 sm:pb-40 sm:pt-28">
+    <div className="relative z-10 mx-auto max-w-[112rem] px-5 pb-32 pt-24 sm:px-8 sm:pb-40 sm:pt-28 lg:px-12">
       {/* Header */}
       <header className="mb-10 flex flex-col gap-4 sm:mb-12 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -425,7 +497,13 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
                     <span>Library — {selectedVolume.displayName}</span>
                     <span>{photos.length.toString().padStart(3, "0")} photos</span>
                   </div>
-                  <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                  <ul
+                    className="grid gap-5 lg:gap-6"
+                    style={{
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(min(100%, 17rem), 1fr))",
+                    }}
+                  >
                     <AnimatePresence>
                       {photos.map((p) => (
                         <motion.li
@@ -434,7 +512,7 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.96 }}
-                          className="group relative overflow-hidden border border-[#efe7dc]/10 bg-[#0b0b0b]"
+                          className="group relative flex h-full flex-col overflow-hidden border border-[#efe7dc]/10 bg-[#0b0b0b]"
                         >
                           <div
                             className="relative"
@@ -444,108 +522,115 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
                               src={photoSrc(p)}
                               alt={p.title || p.filename}
                               fill
-                              sizes="(max-width: 768px) 50vw, 25vw"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 18vw"
                               className="object-cover"
                             />
                           </div>
-                          <div className="space-y-2 p-3">
-                            <input
-                              defaultValue={p.title}
-                              placeholder="Title"
-                              onBlur={(e) =>
-                                e.target.value !== p.title &&
-                                saveMeta(p.id, { title: e.target.value })
-                              }
-                              data-cursor="hover"
-                              className="w-full bg-transparent text-sm text-[#efe7dc] placeholder:text-[#efe7dc]/30 focus:outline-none"
-                            />
-                            <input
-                              defaultValue={p.caption}
-                              placeholder="Caption"
-                              onBlur={(e) =>
-                                e.target.value !== p.caption &&
-                                saveMeta(p.id, { caption: e.target.value })
-                              }
-                              data-cursor="hover"
-                              className="w-full bg-transparent text-[11px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                            />
-                            <div className="grid grid-cols-3 gap-2">
+                          <div className="flex flex-1 flex-col p-4">
+                            <div className="flex-1 space-y-3">
                               <input
-                                defaultValue={p.aperture}
-                                placeholder="f/1.8"
-                                aria-label="Aperture"
+                                key={`${p.id}:${p.title}`}
+                                defaultValue={p.title}
+                                placeholder="Title"
                                 onBlur={(e) =>
-                                  e.target.value !== p.aperture &&
-                                  saveMeta(p.id, { aperture: e.target.value })
+                                  e.target.value !== p.title &&
+                                  saveMeta(p.id, { title: e.target.value })
                                 }
                                 data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
+                                className="w-full bg-transparent py-1 font-display text-2xl leading-tight text-[#efe7dc] placeholder:text-[#efe7dc]/30 focus:outline-none"
                               />
-                              <input
-                                defaultValue={p.shutterSpeed}
-                                placeholder="1/250"
-                                aria-label="Shutter speed"
-                                onBlur={(e) =>
-                                  e.target.value !== p.shutterSpeed &&
-                                  saveMeta(p.id, { shutterSpeed: e.target.value })
-                                }
-                                data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                              />
-                              <input
-                                defaultValue={p.iso}
-                                placeholder="ISO"
-                                aria-label="ISO"
-                                onBlur={(e) =>
-                                  e.target.value !== p.iso &&
-                                  saveMeta(p.id, { iso: e.target.value })
-                                }
-                                data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                              />
+                              <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+                                <input
+                                  defaultValue={p.aperture}
+                                  placeholder="f/1.8"
+                                  aria-label="Aperture"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.aperture &&
+                                    saveMeta(p.id, { aperture: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                                <input
+                                  defaultValue={p.shutterSpeed}
+                                  placeholder="1/250"
+                                  aria-label="Shutter speed"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.shutterSpeed &&
+                                    saveMeta(p.id, { shutterSpeed: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                                <input
+                                  defaultValue={p.iso}
+                                  placeholder="ISO"
+                                  aria-label="ISO"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.iso &&
+                                    saveMeta(p.id, { iso: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                              </div>
+                              <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+                                <input
+                                  defaultValue={p.camera}
+                                  placeholder="Camera"
+                                  aria-label="Camera"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.camera &&
+                                    saveMeta(p.id, { camera: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                                <input
+                                  defaultValue={p.lens}
+                                  placeholder="Lens"
+                                  aria-label="Lens"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.lens &&
+                                    saveMeta(p.id, { lens: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                                <input
+                                  defaultValue={p.focalLength}
+                                  placeholder="35mm"
+                                  aria-label="Focal length"
+                                  onBlur={(e) =>
+                                    e.target.value !== p.focalLength &&
+                                    saveMeta(p.id, { focalLength: e.target.value })
+                                  }
+                                  data-cursor="hover"
+                                  className="min-w-0 bg-transparent font-mono text-xs text-[#efe7dc]/65 placeholder:text-[#efe7dc]/25 focus:outline-none"
+                                />
+                              </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <input
-                                defaultValue={p.camera}
-                                placeholder="Camera"
-                                aria-label="Camera"
-                                onBlur={(e) =>
-                                  e.target.value !== p.camera &&
-                                  saveMeta(p.id, { camera: e.target.value })
-                                }
+                            <div className="mt-5 space-y-2">
+                              <button
+                                type="button"
+                                onClick={() => openTitleGenerator(p)}
+                                disabled={titleOptions[p.id]?.loading}
                                 data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                              />
-                              <input
-                                defaultValue={p.lens}
-                                placeholder="Lens"
-                                aria-label="Lens"
-                                onBlur={(e) =>
-                                  e.target.value !== p.lens &&
-                                  saveMeta(p.id, { lens: e.target.value })
-                                }
+                                className="w-full border border-[#efe7dc]/25 px-3 py-2 text-left text-[11px] uppercase tracking-[0.25em] text-[#efe7dc]/70 transition-colors hover:border-[#efe7dc] hover:bg-[#efe7dc] hover:text-black disabled:border-[#efe7dc]/10 disabled:text-[#efe7dc]/25"
+                              >
+                                {titleOptions[p.id]?.loading
+                                  ? "Generating..."
+                                  : "Generate title ideas"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => remove(p.id)}
                                 data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                              />
-                              <input
-                                defaultValue={p.focalLength}
-                                placeholder="35mm"
-                                aria-label="Focal length"
-                                onBlur={(e) =>
-                                  e.target.value !== p.focalLength &&
-                                  saveMeta(p.id, { focalLength: e.target.value })
-                                }
-                                data-cursor="hover"
-                                className="min-w-0 bg-transparent font-mono text-[10px] text-[#efe7dc]/60 placeholder:text-[#efe7dc]/20 focus:outline-none"
-                              />
+                                className="w-full border border-red-300/60 px-3 py-2 text-left text-[11px] uppercase tracking-[0.25em] text-red-300 transition-colors hover:bg-red-300 hover:text-black"
+                              >
+                                Delete
+                              </button>
                             </div>
-                            <button
-                              onClick={() => remove(p.id)}
-                              data-cursor="hover"
-                              className="text-[10px] uppercase tracking-[0.25em] text-[#efe7dc]/40 transition-colors hover:text-red-300"
-                            >
-                              Delete
-                            </button>
                           </div>
                         </motion.li>
                       ))}
@@ -654,6 +739,118 @@ export default function AdminClient({ initialPhotos, initialVolume, allVolumes }
           No volumes yet. Create one above.
         </div>
       )}
+
+      <AnimatePresence>
+        {titleModalPhoto && titleModalState && (
+          <motion.div
+            key="title-generator"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-lg"
+            onClick={() => setTitleModalPhotoId(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: [0.2, 0.7, 0.2, 1] }}
+              className="max-h-[90vh] w-full max-w-4xl overflow-y-auto border border-[#efe7dc]/15 bg-[#080808] shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="grid gap-0 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="relative min-h-72 bg-black md:min-h-full">
+                  <Image
+                    src={photoSrc(titleModalPhoto)}
+                    alt={titleModalPhoto.title || titleModalPhoto.filename}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 40vw"
+                    className="object-contain"
+                  />
+                </div>
+                <div className="space-y-6 p-5 sm:p-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.28em] text-[#efe7dc]/45 sm:text-[11px]">
+                        Title generator
+                      </p>
+                      <h2 className="mt-2 font-display text-3xl leading-tight text-[#efe7dc]">
+                        {titleModalPhoto.title || "Untitled photograph"}
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTitleModalPhotoId(null)}
+                      data-cursor="hover"
+                      className="shrink-0 border border-[#efe7dc]/20 px-3 py-2 text-sm text-[#efe7dc]/70 transition-colors hover:border-[#efe7dc] hover:bg-[#efe7dc] hover:text-black"
+                      aria-label="Close title generator"
+                    >
+                      X
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] uppercase tracking-[0.25em] text-[#efe7dc]/45 sm:text-[11px]">
+                      Creative direction
+                    </label>
+                    <textarea
+                      value={titleGuidance}
+                      onChange={(e) => setTitleGuidance(e.target.value)}
+                      rows={3}
+                      maxLength={500}
+                      placeholder="e.g. darker, more cinematic, less literal, warmer, focus on stillness"
+                      data-cursor="hover"
+                      className="w-full resize-none border border-[#efe7dc]/15 bg-black/40 p-3 text-sm leading-6 text-[#efe7dc] placeholder:text-[#efe7dc]/25 focus:border-[#efe7dc]/45 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => generateTitleOptions(titleModalPhoto, "")}
+                      disabled={titleModalState.loading}
+                      data-cursor="hover"
+                      className="border border-[#efe7dc]/30 px-4 py-3 text-[11px] uppercase tracking-[0.25em] text-[#efe7dc]/75 transition-colors hover:border-[#efe7dc] hover:bg-[#efe7dc] hover:text-black disabled:border-[#efe7dc]/10 disabled:text-[#efe7dc]/25"
+                    >
+                      {titleModalState.options.length ? "More title ideas" : "Generate title ideas"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => generateTitleOptions(titleModalPhoto, titleGuidance)}
+                      disabled={titleModalState.loading || !titleGuidance.trim()}
+                      data-cursor="hover"
+                      className="border border-[#efe7dc]/30 px-4 py-3 text-[11px] uppercase tracking-[0.25em] text-[#efe7dc]/75 transition-colors hover:border-[#efe7dc] hover:bg-[#efe7dc] hover:text-black disabled:border-[#efe7dc]/10 disabled:text-[#efe7dc]/25"
+                    >
+                      Use direction
+                    </button>
+                  </div>
+
+                  {titleModalState.error && (
+                    <p className="text-sm text-red-300/80">{titleModalState.error}</p>
+                  )}
+
+                  <div className="space-y-2">
+                    {titleModalState.loading && (
+                      <p className="text-sm text-[#efe7dc]/50">Generating title options...</p>
+                    )}
+                    {titleModalState.options.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => applyTitleOption(titleModalPhoto.id, option)}
+                        data-cursor="hover"
+                        className="block w-full border border-[#efe7dc]/15 px-4 py-3 text-left font-display text-2xl leading-tight text-[#efe7dc]/80 transition-colors hover:border-[#efe7dc]/50 hover:bg-[#efe7dc] hover:text-black"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
